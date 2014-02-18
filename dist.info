@@ -1,0 +1,92 @@
+type = "x86"
+arch = "Windows"
+author = "Alexey Melnichuk"
+depends = {
+[[lua > 5.1]],
+[[libzmq >= 3.2]],
+}
+
+desc = "Lua bindings to ZeroMQ"
+version = "0.3.5"
+maintainer = "Alexey Melnichuk"
+files = {
+Runtime = {
+[[lib\lua\lzmq.dll]],
+[[lib\lua\lzmq\loop.lua]],
+[[lib\lua\lzmq\poller.lua]],
+[[lib\lua\lzmq\threads.lua]],
+[[lib\lua\lzmq\ffi.lua]],
+[[lib\lua\lzmq\ffi\api.lua]],
+[[lib\lua\lzmq\ffi\error.lua]],
+[[lib\lua\lzmq\ffi\loop.lua]],
+[[lib\lua\lzmq\ffi\poller.lua]],
+[[lib\lua\lzmq\ffi\timer.lua]],
+[[lib\lua\lzmq\ffi\threads.lua]],
+[[lib\lua\lzmq\llthreads\ex.lua]],
+[[lib\lua\lzmq\impl\threads.lua]],
+[[lib\lua\lzmq\impl\loop.lua]],
+[[lib\lua\lzmq\timer.dll]],
+}
+,
+Example = {
+[[share\lzmq\example\\device\cli.lua]],
+[[share\lzmq\example\\device\device.lua]],
+[[share\lzmq\example\\device\srv.lua]],
+[[share\lzmq\example\\echo_cli.lua]],
+[[share\lzmq\example\\echo_loop.lua]],
+[[share\lzmq\example\\echo_loop_raw.lua]],
+[[share\lzmq\example\\monitor.lua]],
+[[share\lzmq\example\\perf\local_lat.lua]],
+[[share\lzmq\example\\perf\local_multipart.lua]],
+[[share\lzmq\example\\perf\local_thr.lua]],
+[[share\lzmq\example\\perf\remote_lat.lua]],
+[[share\lzmq\example\\perf\remote_multipart.lua]],
+[[share\lzmq\example\\perf\remote_thr.lua]],
+[[share\lzmq\example\\perf\test_lat.bat]],
+[[share\lzmq\example\\perf\test_multipart.bat]],
+[[share\lzmq\example\\perf\test_thr.bat]],
+[[share\lzmq\example\\perf\thread_lat.lua]],
+[[share\lzmq\example\\perf\thread_thr.lua]],
+[[share\lzmq\example\\perf2\lat\inproc_lat.lua]],
+[[share\lzmq\example\\perf2\lat\local_lat.lua]],
+[[share\lzmq\example\\perf2\lat\remote_lat.lua]],
+[[share\lzmq\example\\perf2\lat_nomsg\inproc_lat.lua]],
+[[share\lzmq\example\\perf2\lat_nomsg\local_lat.lua]],
+[[share\lzmq\example\\perf2\lat_nomsg\remote_lat.lua]],
+[[share\lzmq\example\\perf2\runner.lua]],
+[[share\lzmq\example\\perf2\thr\inproc_thr.lua]],
+[[share\lzmq\example\\perf2\thr\local_thr.lua]],
+[[share\lzmq\example\\perf2\thr\remote_thr.lua]],
+[[share\lzmq\example\\perf2\thr_nomsg\inproc_thr.lua]],
+[[share\lzmq\example\\perf2\thr_nomsg\local_thr.lua]],
+[[share\lzmq\example\\perf2\thr_nomsg\remote_thr.lua]],
+[[share\lzmq\example\\queue_device.lua]],
+[[share\lzmq\example\\utils.lua]],
+[[share\lzmq\example\\zap.lua]],
+}
+,
+Data = {
+[[share\lzmq\README.md]],
+[[share\lzmq\LICENCE.txt]],
+}
+,
+Test = {
+[[share\lzmq\test\\lunit\console.lua]],
+[[share\lzmq\test\\test.lua]],
+[[share\lzmq\test\\test_proxy.lua]],
+[[share\lzmq\test\\test_req_relaxed.lua]],
+[[share\lzmq\test\\test_threads.lua]],
+[[share\lzmq\test\\test_threads_arg.lua]],
+[[share\lzmq\test\\test_threads_file.lua]],
+[[share\lzmq\test\\test_threads_fork.lua]],
+[[share\lzmq\test\\test_threads_fork_arg.lua]],
+[[share\lzmq\test\\thread.lua]],
+[[share\lzmq\test\\utest.lua]],
+[[share\lzmq\test\utils.lua]],
+}
+,
+}
+
+license = "MIT/X11"
+name = "lzmq"
+url = "https://github.com/moteus/lzmq"
