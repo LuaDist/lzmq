@@ -1,4 +1,4 @@
-local LZMQ_VERSION = "0.3.6-dev"
+local LZMQ_VERSION = "0.3.6"
 
 local lua_version_t
 local function lua_version()
@@ -164,7 +164,6 @@ end
 
 function Context:_remove_socket(skt)
   self._private.sockets[skt:handle()] = nil
-  self:_inc_socket_count(-1)
 end
 
 function Context:closed()
@@ -362,6 +361,7 @@ function Socket:close(linger)
   if not self._private.dont_destroy then
     if self._private.ctx then
       self._private.ctx:_remove_socket(self)
+      self._private.ctx:_inc_socket_count(-1)
     end
 
     if linger then
@@ -479,7 +479,7 @@ function Socket:recv(flags)
   assert(not self:closed())
   local msg = api.zmq_msg_init(tmp_msg)
   if not msg then return nil, zerror() end
-  local ret = api.zmq_msg_recv(msg, self._private.skt)
+  local ret = api.zmq_msg_recv(msg, self._private.skt, flags)
   if ret == -1 then
     api.zmq_msg_close(msg)
     return nil, zerror()
@@ -677,7 +677,7 @@ local poll_item = ffi.new(api.vla_pollitem_t, 1)
 
 function Socket:poll(timeout, events)
   timeout = timeout or -1
-  events  = mask or ZMQ_POLLIN
+  events  = events or ZMQ_POLLIN
 
   poll_item[0].socket  = self._private.skt
   poll_item[0].fd      = 0
@@ -885,6 +885,17 @@ function Message:get(option)
   local ret = api.zmq_msg_get(self._private.msg, option)
   if ret ~= -1 then return nil, zerror() end
   return true
+end
+
+if api.zmq_msg_gets then
+
+function Message:gets(option)
+  assert(not self:closed())
+  local value = api.zmq_msg_gets(self._private.msg, option)
+  if not value then return nil, zerror() end
+  return value
+end
+
 end
 
 Message.__tostring = Message.data

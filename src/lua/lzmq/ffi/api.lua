@@ -111,7 +111,7 @@ end
 
 if is_zmq_ge(4, 1, 0) then
   ffi.cdef[[
-    typedef struct zmq_msg_t {unsigned char _ [40];} zmq_msg_t;
+    typedef struct zmq_msg_t {unsigned char _ [48];} zmq_msg_t;
   ]]
 else
   ffi.cdef[[
@@ -158,6 +158,12 @@ ffi.cdef[[
   int    zmq_msg_get       (zmq_msg_t *msg, int option);
   int    zmq_msg_set       (zmq_msg_t *msg, int option, int optval);
 ]]
+
+if is_zmq_ge(4, 1, 0) then
+  ffi.cdef[[
+    const char *zmq_msg_gets (zmq_msg_t *msg, const char *property);
+  ]]
+end
 
 ffi.cdef([[
 typedef struct {
@@ -411,7 +417,7 @@ end
 
 -- zmq_msg_init, zmq_msg_init_size, zmq_msg_data, zmq_msg_size, zmq_msg_get, 
 -- zmq_msg_set, zmq_msg_move, zmq_msg_copy, zmq_msg_set_data, zmq_msg_get_data, 
--- zmq_msg_init_string, zmq_msg_recv, zmq_msg_send, zmq_msg_more
+-- zmq_msg_init_string, zmq_msg_recv, zmq_msg_send, zmq_msg_more, zmq_msg_gets
 do -- message
 
 function _M.zmq_msg_init(msg)
@@ -501,6 +507,16 @@ function _M.zmq_msg_set(msg, option, optval)
   return libzmq3.zmq_msg_set(msg, option, optval)
 end
 
+if pget(libzmq3, "zmq_msg_gets") then
+
+function _M.zmq_msg_gets(msg, option)
+  local value = libzmq3.zmq_msg_gets(msg, option)
+  if value == NULL then return end
+  return ffi.string(value)
+end
+
+end
+
 end
 
 -- zmq_z85_encode, zmq_z85_decode
@@ -508,6 +524,7 @@ if pget(libzmq3, "zmq_z85_encode") then
 
 -- we alloc buffers for CURVE encoded key size
 local TMP_BUF_SIZE = 41
+local tmp_buf
 
 local function alloc_z85_buff(len)
   if len <= TMP_BUF_SIZE then
@@ -543,7 +560,7 @@ if pget(libzmq3, "zmq_curve_keypair") then
 function _M.zmq_curve_keypair(as_binary)
   local public_key = ffi.new(vla_char_t, 41)
   local secret_key = ffi.new(vla_char_t, 41)
-  local rc = libzmq3.zmq_curve_keypair(public_key, secret_key)
+  local ret = libzmq3.zmq_curve_keypair(public_key, secret_key)
   if ret == -1 then return -1 end
   if not as_binary then
     return ffi.string(public_key, 40), ffi.string(secret_key, 40)
@@ -640,14 +657,6 @@ if ZMQ_VERSION_MAJOR == 3 then
   end
 
 else
-  ffi.cdef([[
-    typedef struct {
-        uint16_t event;
-        int32_t  value;
-    } zmq_event_t;
-  ]])
-  local zmq_event_t  = ffi.typeof("zmq_event_t")
-  local event_size   = ffi.sizeof(zmq_event_t)
   local event        = ffi.new(auint16_t)
   local value        = ffi.new(aint32_t)
 

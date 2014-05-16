@@ -1,3 +1,5 @@
+pcall(require, "luacov")
+
 local function zversion(zmq)
   local version = zmq.version()
   return string.format("%d.%d.%d", version[1], version[2], version[3])
@@ -1063,6 +1065,26 @@ function test_recv_all()
   local t = assert_table(sub:recv_all())
   assert_equal(3, #t)
   assert_equal('hello, world', table.concat(t))
+end
+
+function test_recv_flags()
+  sub:set_rcvtimeo(10000)
+  local timer = assert(ztimer.monotonic():start())
+  local ok, err = sub:recv(zmq.DONTWAIT)
+  local elapsed = timer:stop()
+  assert_nil(ok)
+  assert(error_is(err, zmq.errors.EAGAIN))
+  assert(elapsed < 100)
+end
+
+function test_recv_all_flags()
+  sub:set_rcvtimeo(10000)
+  local timer = assert(ztimer.monotonic():start())
+  local ok, err = sub:recv_all(zmq.DONTWAIT)
+  local elapsed = timer:stop()
+  assert_nil(ok)
+  assert(error_is(err, zmq.errors.EAGAIN))
+  assert(elapsed < 100)
 end
 
 function test_sendx()
