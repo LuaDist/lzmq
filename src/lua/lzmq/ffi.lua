@@ -1,4 +1,4 @@
-local LZMQ_VERSION = "0.3.6"
+local LZMQ_VERSION = "0.4.0"
 
 local lua_version_t
 local function lua_version()
@@ -578,7 +578,9 @@ end
 if api.zmq_recv_event then
 function Socket:recv_event(flags)
   assert(not self:closed())
-  return api.zmq_recv_event(self._private.skt, flags)
+  local event, value, address = api.zmq_recv_event(self._private.skt, flags)
+  if not event then return nil, zerror() end
+  return event, value, address
 end
 end
 
@@ -640,6 +642,24 @@ for optname, params in pairs(api.SOCKET_OPTIONS) do
   end
 end
 
+if api.SOCKET_OPTIONS.ZMQ_IDENTITY_FD then
+
+Socket.get_identity_fd = function(self, id)
+  assert(type(id) == 'string')
+
+  local val = api.zmq_skt_getopt_identity_fd(
+    self._private.skt,
+    api.SOCKET_OPTIONS.ZMQ_IDENTITY_FD[1],
+    id
+  )
+  if not val then return nil, zerror() end
+  return val
+end
+
+Socket.identity_fd = Socket.get_identity_fd
+
+end
+
 function Socket:more()
   local more, err = self:rcvmore()
   if not more then return nil, err end
@@ -670,7 +690,14 @@ function Socket:monitor(addr, events)
   local ret = api.zmq_socket_monitor(self._private.skt, addr, events)
   if -1 == ret then return nil, zerror() end
 
-  return addr  
+  return addr
+end
+
+function Socket:reset_monitor()
+  local ret = api.zmq_socket_monitor(self._private.skt, api.NULL, 0)
+  if -1 == ret then return nil, zerror() end
+
+  return true
 end
 
 local poll_item = ffi.new(api.vla_pollitem_t, 1)

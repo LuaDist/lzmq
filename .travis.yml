@@ -1,20 +1,20 @@
-language: erlang
+language: c
 
 env:
   global:
-    - PLATFORM=linux
-    - LUAROCKS_VER=2.1.0
+    - LUAROCKS=2.2.0beta1
   matrix:
+    # You can set PERF only for luajit/ffi
     # todo: install libffi and test ffi binding on Lua 5.1/5.2
-    - LUA=lua5.1 ZMQ_VER=zeromq3 LZMQ=lzmq    PERF="NO"  LUA_SFX=
-    - LUA=lua5.1 ZMQ_VER=zeromq4 LZMQ=lzmq    PERF="NO"  LUA_SFX=
-    - LUA=lua5.2 ZMQ_VER=zeromq3 LZMQ=lzmq    PERF="NO"  LUA_SFX=
-    - LUA=luajit ZMQ_VER=zeromq3 LZMQ=lzmq    PERF="NO"  LUA_SFX=jit
-    - LUA=luajit ZMQ_VER=zeromq3 LZMQ=ffi     PERF="YES" LUA_SFX=jit
-    - LUA=luajit ZMQ_VER=zeromq4 LZMQ=ffi     PERF="YES" LUA_SFX=jit
-    - LUA=luajit ZMQ_VER=zeromq3 LZMQ=ffi-lua PERF="NO"  LUA_SFX=jit
-    - LUA=lua5.1 ZMQ_VER=libzmq  LZMQ=lzmq    PERF="NO"  LUA_SFX=
-    - LUA=luajit ZMQ_VER=libzmq  LZMQ=ffi-lua PERF="NO"  LUA_SFX=jit
+    - LUA=lua5.1 ZMQ_VER=zeromq3 LZMQ=lzmq    PERF="NO"
+    - LUA=lua5.1 ZMQ_VER=zeromq4 LZMQ=lzmq    PERF="NO"
+    - LUA=lua5.2 ZMQ_VER=zeromq3 LZMQ=lzmq    PERF="NO"
+    - LUA=luajit ZMQ_VER=zeromq3 LZMQ=lzmq    PERF="NO"
+    - LUA=luajit ZMQ_VER=zeromq3 LZMQ=ffi     PERF="NO"
+    - LUA=luajit ZMQ_VER=zeromq4 LZMQ=ffi     PERF="NO"
+    - LUA=luajit ZMQ_VER=zeromq3 LZMQ=ffi-lua PERF="NO"
+    - LUA=lua5.1 ZMQ_VER=libzmq  LZMQ=lzmq    PERF="NO"
+    - LUA=luajit ZMQ_VER=libzmq  LZMQ=ffi-lua PERF="NO"
 
 branches:
   only:
@@ -32,12 +32,15 @@ before_install:
 
 install:
   - sudo pip install cpp-coveralls
-  - sudo luarocks install https://raw.githubusercontent.com/moteus/luacov/moteus-rockspec/rockspecs/luacov-scm.mot-1.rockspec
-  - sudo luarocks install https://raw.githubusercontent.com/moteus/luacov-coveralls/master/rockspecs/luacov-coveralls-scm-0.rockspec
+  - sudo luarocks install luacov-coveralls --server=http://rocks.moonscript.org/dev
+  - sudo luarocks install lua-llthreads2
   - sudo luarocks install https://raw.github.com/moteus/lunit/moteus-skip/rockspecs/lunitx-scm.mot.skip-0.rockspec
-  - sudo luarocks install https://raw.github.com/moteus/lua-llthreads2/master/rockspecs/lua-llthreads2-scm-0.rockspec
+
   - if [ $LZMQ = "ffi-lua" ]; then
-      sudo luarocks install https://raw2.github.com/justincormack/ljsyscall/master/rockspec/ljsyscall-0.9-1.rockspec;
+      sudo luarocks install ljsyscall 0.9;
+    fi
+
+  - if [ $LZMQ = "ffi-lua" ]; then
       sudo luarocks make rockspecs/lzmq-ffi-scm-0.rockspec;
     else
       sudo luarocks make rockspecs/lzmq-scm-0.rockspec  CFLAGS="-O2 -fPIC -ftest-coverage -fprofile-arcs" LIBFLAG="-shared --coverage";
@@ -45,16 +48,18 @@ install:
 
 script:
   - cd test
-  - lunit.sh -i lua$LUA_SFX utest.lua
-  - lunit.sh -i lua$LUA_SFX test_proxy.lua
-  - lua$LUA_SFX -lluacov test_threads.lua
-  - lua$LUA_SFX -lluacov test_threads_arg.lua
-  - lua$LUA_SFX -lluacov test_threads_fork_arg.lua
-  - lua$LUA_SFX -lluacov test_threads_fork.lua
-  - lua$LUA_SFX -lluacov test_threads_file.lua
-  - lua$LUA_SFX -lluacov test_metadata.lua
+  - lunit.sh utest.lua
+  - lunit.sh test_proxy.lua
+  - lua -lluacov test_threads.lua
+  - lua -lluacov test_threads_arg.lua
+  - lua -lluacov test_threads_fork_arg.lua
+  - lua -lluacov test_threads_fork.lua
+  - lua -lluacov test_threads_file.lua
+  - lua -lluacov test_threads_actor.lua
+  - lua -lluacov test_threads_actor_poll.lua
+  - lua -lluacov test_metadata.lua
   #- if [ "$ZMQ_VER" == "libzmq" ]; then
-  #    lua$LUA_SFX test_req_relaxed.lua;
+  #    lua test_req_relaxed.lua;
   #  fi
   - if [ $PERF = "YES" ]; then
       cd $TRAVIS_BUILD_DIR;
@@ -70,11 +75,12 @@ after_success:
   - cd test
   - if [ $LZMQ = "ffi-lua" ]; then
       luacov-coveralls -c .luacov.ffi;
+    elif [ $LZMQ = "ffi" ]; then
+      luacov-coveralls;
     else
-      coveralls -e lua-5.1.5 -e lua-5.2.3 -e LuaJIT-2.0.3 -e libzmq -e zeromq3 -e zeromq4 -e libsodium -b .. -r .. --dump c.report.json;
+      coveralls -e libzmq -e zeromq3 -e zeromq4 -e libsodium -e src/lzutils.c -b .. -r .. --dump c.report.json;
       luacov-coveralls -j c.report.json;
     fi
-  - curl --form "json_file=@luacov.report.json;type=application/json" https://coveralls.io/api/v1/jobs
 
 notifications:
   email:

@@ -22,14 +22,12 @@ local zmq      = require(ZMQ_NAME)
 local ztimer   = require(ZMQ_NAME .. ".timer")
 local zthreads = require(ZMQ_NAME .. ".threads")
 
-local ctx = zmq.context()
-
-local local_lat = zthreads.run(ctx, "@./local_lat.lua", addr, message_size, message_count, argv[3])
+local local_lat = zthreads.xrun("@./local_lat.lua", addr, message_size, message_count, argv[3])
 local_lat:start()
 
 ztimer.sleep(1000)
 
-local remote_lat = zthreads.run(ctx, "@./remote_lat.lua", addr, message_size, message_count, argv[3])
+local remote_lat = zthreads.xrun("@./remote_lat.lua", addr, message_size, message_count, argv[3])
 remote_lat:start()
 
 remote_lat:join()
